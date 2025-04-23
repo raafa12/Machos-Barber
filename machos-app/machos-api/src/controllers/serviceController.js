@@ -1,123 +1,122 @@
+// controllers/serviceController.js
 const Service = require('../models/Service');
-const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
+const { validationResult } = require('express-validator');
 
 // Obtener todos los servicios
-exports.getAllServices = catchAsync(async (req, res, next) => {
-  // Filtrar sólo servicios activos si no es admin
-  const filter = req.user && req.user.role === 'admin' ? {} : { active: true };
-  
-  const services = await Service.find(filter);
-  
-  res.status(200).json({
-    status: 'success',
-    results: services.length,
-    data: { services }
-  });
-});
+exports.getAllServices = async (req, res) => {
+  try {
+    const services = await Service.find().sort({ name: 1 });
+    return res.status(200).json(services);
+  } catch (error) {
+    console.error('Error al obtener servicios:', error);
+    return res.status(500).json({ message: 'Error al obtener los servicios' });
+  }
+};
 
 // Obtener un servicio por ID
-exports.getService = catchAsync(async (req, res, next) => {
-  const service = await Service.findById(req.params.id);
-  
-  if (!service) {
-    return next(new AppError('No se encontró un servicio con ese ID', 404));
-  }
-  
-  // Si no es admin y el servicio no está activo, no mostrarlo
-  if ((!req.user || req.user.role !== 'admin') && !service.active) {
-    return next(new AppError('No se encontró un servicio con ese ID', 404));
-  }
-  
-  res.status(200).json({
-    status: 'success',
-    data: { service }
-  });
-});
-
-// Crear un nuevo servicio (sólo admin)
-exports.createService = catchAsync(async (req, res, next) => {
-  const newService = await Service.create(req.body);
-  
-  res.status(201).json({
-    status: 'success',
-    data: { service: newService }
-  });
-});
-
-// Actualizar un servicio (sólo admin)
-exports.updateService = catchAsync(async (req, res, next) => {
-  const service = await Service.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    {
-      new: true, // Retornar el documento actualizado
-      runValidators: true // Validar de acuerdo al Schema
+exports.getServiceById = async (req, res) => {
+  try {
+    const service = await Service.findById(req.params.id);
+    if (!service) {
+      return res.status(404).json({ message: 'Servicio no encontrado' });
     }
-  );
-  
-  if (!service) {
-    return next(new AppError('No se encontró un servicio con ese ID', 404));
+    return res.status(200).json(service);
+  } catch (error) {
+    console.error('Error al obtener servicio:', error);
+    return res.status(500).json({ message: 'Error al obtener el servicio' });
   }
-  
-  res.status(200).json({
-    status: 'success',
-    data: { service }
-  });
-});
+};
 
-// Eliminar un servicio (sólo admin)
-exports.deleteService = catchAsync(async (req, res, next) => {
-  const service = await Service.findByIdAndDelete(req.params.id);
-  
-  if (!service) {
-    return next(new AppError('No se encontró un servicio con ese ID', 404));
+// Crear un nuevo servicio
+exports.createService = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-  
-  res.status(204).json({
-    status: 'success',
-    data: null
-  });
-});
 
-// Alternativa: Desactivar un servicio (más seguro que eliminarlo)
-exports.deactivateService = catchAsync(async (req, res, next) => {
-  const service = await Service.findByIdAndUpdate(
-    req.params.id,
-    { active: false },
-    {
-      new: true,
-      runValidators: true
+  const { name, description, price, duration, category, image } = req.body;
+
+  try {
+    // Comprobar si ya existe un servicio con el mismo nombre
+    const existingService = await Service.findOne({ name });
+    if (existingService) {
+      return res.status(400).json({ message: 'Ya existe un servicio con ese nombre' });
     }
-  );
-  
-  if (!service) {
-    return next(new AppError('No se encontró un servicio con ese ID', 404));
-  }
-  
-  res.status(200).json({
-    status: 'success',
-    data: { service }
-  });
-});
 
-// Activar un servicio
-exports.activateService = catchAsync(async (req, res, next) => {
-  const service = await Service.findByIdAndUpdate(
-    req.params.id,
-    { active: true },
-    {
-      new: true,
-      runValidators: true
-    }
-  );
-  
-  if (!service) {
-    return next(new AppError('No se encontró un servicio con ese ID', 404));
+    // Crear el nuevo servicio
+    const newService = new Service({
+      name,
+      description,
+      price,
+      duration, // en minutos
+      category,
+      image
+    });
+
+    await newService.save();
+    return res.status(201).json(newService);
+  } catch (error) {
+    console.error('Error al crear servicio:', error);
+    return res.status(500).json({ message: 'Error al crear el servicio' });
   }
-  
-  res.status(200).json({
-    status: 'success',
-    data: { service }
-  });
-});
+};
+
+// Actualizar un servicio
+exports.updateService = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { name, description, price, duration, category, image } = req.body;
+
+  try {
+    // Comprobar si existe otro servicio con el mismo nombre (que no sea este mismo)
+    const duplicateService = await Service.findOne({ 
+      name, 
+      _id: { $ne: req.params.id } 
+    });
+    
+    if (duplicateService) {
+      return res.status(400).json({ message: 'Ya existe otro servicio con ese nombre' });
+    }
+
+    const serviceToUpdate = await Service.findById(req.params.id);
+    if (!serviceToUpdate) {
+      return res.status(404).json({ message: 'Servicio no encontrado' });
+    }
+
+    // Actualizar los campos
+    serviceToUpdate.name = name || serviceToUpdate.name;
+    serviceToUpdate.description = description || serviceToUpdate.description;
+    serviceToUpdate.price = price !== undefined ? price : serviceToUpdate.price;
+    serviceToUpdate.duration = duration !== undefined ? duration : serviceToUpdate.duration;
+    serviceToUpdate.category = category || serviceToUpdate.category;
+    serviceToUpdate.image = image || serviceToUpdate.image;
+
+    const updatedService = await serviceToUpdate.save();
+    return res.status(200).json(updatedService);
+  } catch (error) {
+    console.error('Error al actualizar servicio:', error);
+    return res.status(500).json({ message: 'Error al actualizar el servicio' });
+  }
+};
+
+// Eliminar un servicio
+exports.deleteService = async (req, res) => {
+  try {
+    const service = await Service.findById(req.params.id);
+    if (!service) {
+      return res.status(404).json({ message: 'Servicio no encontrado' });
+    }
+
+    // Aquí podríamos verificar si hay reservas que usan este servicio
+    // y decidir si permitir la eliminación o no
+
+    await Service.findByIdAndDelete(req.params.id);
+    return res.status(200).json({ message: 'Servicio eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar servicio:', error);
+    return res.status(500).json({ message: 'Error al eliminar el servicio' });
+  }
+};

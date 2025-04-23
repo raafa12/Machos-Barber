@@ -1,30 +1,21 @@
+// src/routes/appointmentRoutes.js
 const express = require('express');
 const router = express.Router();
 const appointmentController = require('../controllers/appointmentController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-// Middleware de autenticación para todas las rutas
-router.use(authMiddleware);
+// Proteger todas las rutas con autenticación
+router.use(authMiddleware.protect);
 
-// Obtener slots disponibles
-router.get('/available-slots', appointmentController.getAvailableTimeSlots);
-
-// Crear una nueva reserva
+// Rutas para clientes
 router.post('/', appointmentController.createAppointment);
+router.get('/user', appointmentController.getUserAppointments);
+router.get('/available-slots', appointmentController.getAvailableTimeSlots);
+router.delete('/:id', appointmentController.cancelAppointment);
+router.get('/:id', appointmentController.getAppointmentDetails);
 
-// Obtener las reservas del usuario autenticado
-router.get('/my-appointments', appointmentController.getUserAppointments);
-
-// Obtener todas las reservas (admin)
+// Rutas para administradores
 router.get('/all', appointmentController.getAllAppointments);
-
-// Obtener detalles de una reserva específica
-router.get('/:id', appointmentController.getAppointmentById);
-
-// Actualizar estado de una reserva
 router.patch('/:id/status', appointmentController.updateAppointmentStatus);
-
-// Cancelar una reserva
-router.post('/:id/cancel', appointmentController.cancelAppointment);
 
 module.exports = router;

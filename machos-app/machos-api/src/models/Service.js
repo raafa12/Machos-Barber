@@ -1,29 +1,31 @@
+// src/models/Service.js
 const mongoose = require('mongoose');
 
 const serviceSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'El nombre del servicio es obligatorio'],
+    required: true,
     trim: true
   },
   description: {
     type: String,
-    required: [true, 'La descripción del servicio es obligatoria'],
     trim: true
-  },
-  duration: {
-    type: Number, // Duración en minutos
-    required: [true, 'La duración del servicio es obligatoria'],
-    min: [5, 'La duración mínima es de 5 minutos']
   },
   price: {
     type: Number,
-    required: [true, 'El precio del servicio es obligatorio'],
-    min: [0, 'El precio no puede ser negativo']
+    required: true,
+    min: 0
   },
-  image: {
-    type: String, // URL de la imagen
-    default: 'default-service.jpg'
+  duration: {
+    type: Number,
+    required: true,
+    min: 15,
+    comment: 'Duration in minutes'
+  },
+  category: {
+    type: String,
+    enum: ['haircut', 'color', 'styling', 'treatment', 'other'],
+    default: 'other'
   },
   active: {
     type: Boolean,
