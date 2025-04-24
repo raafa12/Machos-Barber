@@ -1,47 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api';
+// src/screens/HomeScreen.js
+import React, { useContext, useState } from 'react';
+import { View, Text, Button, StyleSheet } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
+import axios from 'axios';
 
-const HomeScreen = ({ navigation }) => {
-  const [user, setUser] = useState(null);
+const HomeScreen = () => {
+  const { logout, userToken } = useContext(AuthContext);
+  const [privateMessage, setPrivateMessage] = useState('');
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-          navigation.navigate('Login');
-        } else {
-          const user = await AsyncStorage.getItem('user');
-          setUser(JSON.parse(user));
-        }
-      } catch (error) {
-        console.error(error);
-        navigation.navigate('Login');
-      }
-    };
-    fetchUserData();
-  }, [navigation]);
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-    navigation.navigate('Login');
+  const fetchProtectedData = async () => {
+    try {
+      const res = await axios.get('http://<TU-IP>:5000/api/private', {
+        headers: { Authorization: `Bearer ${userToken}` },
+      });
+      setPrivateMessage(res.data.message);
+    } catch {
+      setPrivateMessage('Error al acceder a la ruta protegida');
+    }
   };
 
   return (
-    <View>
-      {user ? (
-        <>
-          <Text>Bienvenido, {user.name}!</Text>
-          <Button title="Cerrar sesión" onPress={handleLogout} />
-        </>
-      ) : (
-        <Text>Cargando...</Text>
-      )}
+    <View style={styles.container}>
+      <Text style={styles.title}>Bienvenido 💈</Text>
+      <Button title="Ruta protegida" onPress={fetchProtectedData} />
+      <Text style={styles.message}>{privateMessage}</Text>
+      <Button title="Cerrar sesión" onPress={logout} color="red" />
     </View>
   );
 };
 
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  title: { fontSize: 24, marginBottom: 20 },
+  message: { marginTop: 20, fontSize: 16 }
+});
+
 export default HomeScreen;
+
