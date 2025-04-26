@@ -1,14 +1,8 @@
-// src/services/api/serviceService.js
-import api from './api';
+import API from './api';
 
-// Obtener todos los servicios disponibles
-export const getServices = async () => {
-  try {
-    const response = await api.get('/services');
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+export const fetchServices = async () => {
+  const res = await API.get('/services');
+  return res.data;
 };
 
 // Para administradores: crear un nuevo servicio

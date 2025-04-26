@@ -27,3 +27,7 @@ const styles = StyleSheet.create({
 
 export default LoginScreen;
 
+await AsyncStorage.setItem('userToken', res.data.token);
+await AsyncStorage.setItem('userData', JSON.stringify(res.data.user));
+
+

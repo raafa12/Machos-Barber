@@ -63,6 +63,11 @@ export const getAllAppointments = async (filters = {}) => {
   }
 };
 
+export const fetchAppointments = async () => {
+  const res = await API.get('/appointments');
+  return res.data;
+};
+
 // Para administradores: actualizar estado de una reserva
 export const updateAppointmentStatus = async (appointmentId, status) => {
   try {
