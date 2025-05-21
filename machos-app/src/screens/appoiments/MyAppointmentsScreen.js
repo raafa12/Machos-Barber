@@ -20,16 +20,20 @@ const MyAppointmentsScreen = () => {
     try {
       setLoading(true);
       const data = await getUserAppointments();
-      // Ordenar citas por fecha, las próximas primero
-      const sortedAppointments = data.sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.time}`);
-        const dateB = new Date(`${b.date}T${b.time}`);
-        return dateA - dateB;
-      });
-      setAppointments(sortedAppointments);
+
+      if (data && data.length > 0) {
+        const sortedAppointments = data.sort((a, b) => {
+          const dateA = new Date(`${a.date}T${a.time}`);
+          const dateB = new Date(`${b.date}T${b.time}`);
+          return dateA - dateB;
+        });
+        setAppointments(sortedAppointments);
+      } else {
+        setAppointments([]);
+      }
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar tus reservas');
       console.error('Error loading appointments:', error);
+      Alert.alert('Error', 'No se pudieron cargar tus reservas. Intenta de nuevo.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -38,9 +42,7 @@ const MyAppointmentsScreen = () => {
 
   // Cargar reservas al montar el componente
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadAppointments();
-    });
+    const unsubscribe = navigation.addListener('focus', loadAppointments);
     return unsubscribe;
   }, [navigation]);
 
@@ -64,12 +66,12 @@ const MyAppointmentsScreen = () => {
             try {
               setLoading(true);
               await cancelAppointment(appointmentId);
-              // Actualizar la lista después de cancelar
-              loadAppointments();
+              loadAppointments(); // Refrescar la lista después de cancelar
               Alert.alert('Éxito', 'Tu reserva ha sido cancelada');
             } catch (error) {
-              Alert.alert('Error', 'No se pudo cancelar la reserva');
               console.error('Error canceling appointment:', error);
+              Alert.alert('Error', 'No se pudo cancelar la reserva. Intenta nuevamente.');
+            } finally {
               setLoading(false);
             }
           }
@@ -82,7 +84,6 @@ const MyAppointmentsScreen = () => {
   const isCancelable = (appointment) => {
     const appointmentDate = new Date(`${appointment.date}T${appointment.time}`);
     const now = new Date();
-    // 24 horas en milisegundos
     const hoursDiff = (appointmentDate - now) / (1000 * 60 * 60);
     return hoursDiff >= 24;
   };
@@ -182,117 +183,7 @@ const MyAppointmentsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: colors.primary,
-  },
-  newAppointmentButton: {
-    backgroundColor: colors.primary,
-    padding: 12,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  newAppointmentButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  listContainer: {
-    paddingBottom: 20,
-  },
-  appointmentCard: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  pastAppointment: {
-    opacity: 0.7,
-  },
-  appointmentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  serviceName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  pendingBadge: {
-    backgroundColor: '#FFC107',
-  },
-  confirmedBadge: {
-    backgroundColor: '#4CAF50',
-  },
-  cancelledBadge: {
-    backgroundColor: '#F44336',
-  },
-  completedBadge: {
-    backgroundColor: '#2196F3',
-  },
-  statusText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  appointmentInfo: {
-    marginBottom: 12,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  infoText: {
-    marginLeft: 8,
-    color: '#666',
-  },
-  cancelButton: {
-    borderWidth: 1,
-    borderColor: '#F44336',
-    borderRadius: 8,
-    padding: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#F44336',
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
+  // Tu código de estilos
 });
 
 export default MyAppointmentsScreen;

@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 export const AuthContext = createContext();
 
@@ -9,14 +10,24 @@ export const AuthProvider = ({ children }) => {
   const [userToken, setUserToken] = useState(null);
 
   const login = async (email, password) => {
-    const res = await axios.post('http://<TU-IP>:5000/api/auth/login', { email, password });
-    const token = res.data.token;
-    await AsyncStorage.setItem('userToken', token);
-    setUserToken(token);
+    try {
+      const res = await axios.post(`${API_URL}/auth/login`, { email, password });
+      const token = res.data.token;
+      await AsyncStorage.setItem('userToken', token);
+      setUserToken(token);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Error de inicio de sesión' };
+    }
   };
 
   const register = async (name, email, password) => {
-    await axios.post('http://<TU-IP>:5000/api/auth/register', { name, email, password });
+    try {
+      await axios.post(`${API_URL}/auth/register`, { name, email, password });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Error de registro' };
+    }
   };
 
   const logout = async () => {

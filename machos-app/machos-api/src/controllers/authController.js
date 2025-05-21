@@ -4,6 +4,17 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secreto123';
 
+// SOLO PARA DESARROLLO - Listar usuarios
+exports.listUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, 'name email role');
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener usuarios' });
+  }
+};
+
+
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
   try {

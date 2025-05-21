@@ -1,7 +1,8 @@
 // src/navigation/Navigation.js
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'react-native';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -10,6 +11,7 @@ import ServicesScreen from '../screens/ServicesScreen';
 import NewAppointmentScreen from '../screens/appoiments/NewAppointmentScreen';
 import MyAppointmentsScreen from '../screens/appoiments/MyAppointmentsScreen';
 import MainTabs from './MainTabs';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,19 +20,65 @@ const Navigation = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <StatusBar backgroundColor="#f5f5f5" barStyle="dark-content" />
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#f5f5f5',
+          },
+          headerTintColor: '#000',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          contentStyle: {
+            backgroundColor: '#f5f5f5',
+          },
+        }}
+      >
         {userToken ? (
-          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-        ) : (
+          // Rutas autenticadas
           <>
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen 
+              name="MainTabs" 
+              component={MainTabs} 
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="Services" 
+              component={ServicesScreen} 
+              options={{ title: 'Servicios' }}
+            />
+            <Stack.Screen 
+              name="NewAppointment" 
+              component={NewAppointmentScreen} 
+              options={{ title: 'Nueva Cita' }}
+            />
+            <Stack.Screen 
+              name="MyAppointments" 
+              component={MyAppointmentsScreen} 
+              options={{ title: 'Mis Citas' }}
+            />
+            <Stack.Screen 
+              name="Profile" 
+              component={ProfileScreen} 
+              options={{ title: 'Mi Perfil' }}
+            />
+          </>
+        ) : (
+          // Rutas no autenticadas
+          <>
+            <Stack.Screen 
+              name="Login" 
+              component={LoginScreen} 
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="Register" 
+              component={RegisterScreen} 
+              options={{ title: 'Registro' }}
+            />
           </>
         )}
-        <Stack.Screen name="Services" component={ServicesScreen} />
-<Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-<Stack.Screen name="NewAppointment" component={NewAppointmentScreen} />
-<Stack.Screen name="MyAppointments" component={MyAppointmentsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

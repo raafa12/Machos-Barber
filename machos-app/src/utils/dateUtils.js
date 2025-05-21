@@ -1,6 +1,9 @@
-import { format } from 'date-fns';
-
-// Función para formatear una fecha
-export const formatDate = (date) => {
-  return format(new Date(date), 'dd/MM/yyyy'); // Puedes cambiar el formato según lo necesites
+export const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 };
+

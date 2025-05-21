@@ -4,12 +4,18 @@ const { validationResult } = require('express-validator');
 
 // Obtener todos los servicios
 exports.getAllServices = async (req, res) => {
+  console.log('Solicitud recibida para obtener todos los servicios');
   try {
+    console.log('Buscando servicios en la base de datos...');
     const services = await Service.find().sort({ name: 1 });
+    console.log('Servicios encontrados:', services.length);
     return res.status(200).json(services);
   } catch (error) {
     console.error('Error al obtener servicios:', error);
-    return res.status(500).json({ message: 'Error al obtener los servicios' });
+    return res.status(500).json({ 
+      message: 'Error al obtener los servicios',
+      error: error.message 
+    });
   }
 };
 

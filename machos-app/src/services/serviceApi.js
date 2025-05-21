@@ -6,9 +6,14 @@ const serviceApi = {
   // Obtener todos los servicios
   getAllServices: async () => {
     try {
+      console.log('Obteniendo servicios de:', `${API_URL}/services`);
       const response = await axios.get(`${API_URL}/services`);
-      return response.data.data.services;
+      console.log('Respuesta de la API (services):', response.data);
+      // La respuesta puede ser directamente el array o estar dentro de data
+      return Array.isArray(response.data) ? response.data : (response.data.data?.services || response.data.data || response.data);
     } catch (error) {
+      console.error('Error al obtener servicios:', error);
+      console.error('Detalles del error:', error.response?.data || error.message);
       throw error.response ? error.response.data : error.message;
     }
   },

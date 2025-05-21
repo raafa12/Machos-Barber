@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
-  FlatList, 
   StyleSheet, 
+  ScrollView,
   TouchableOpacity, 
-  Image, 
-  ActivityIndicator,
-  Alert
+  ActivityIndicator, 
+  Alert, 
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import serviceApi from '../services/serviceApi';
@@ -30,22 +30,37 @@ const ServicesScreen = ({ navigation }) => {
     setUserIsAdmin(admin);
   };
 
-  const loadServices = async () => {
+  const loadServices = useCallback(async () => {
+    console.log('Iniciando carga de servicios...');
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      const data = await serviceApi.getAllServices();
-      setServices(data);
-      setError(null);
+      console.log('Obteniendo servicios de la API...');
+      const response = await serviceApi.getAllServices();
+      console.log('Respuesta de la API (services):', response);
+      
+      // Asegurarse de que los datos sean un array
+      let servicesData = [];
+      if (Array.isArray(response)) {
+        servicesData = response;
+      } else if (response && response.data) {
+        servicesData = Array.isArray(response.data) ? response.data : [response.data];
+      }
+      
+      console.log('Servicios procesados:', servicesData);
+      setServices(servicesData);
     } catch (err) {
-      setError('No se pudieron cargar los servicios. Por favor, intenta de nuevo.');
-      Alert.alert('Error', 'No se pudieron cargar los servicios');
+      console.error('Error al cargar servicios:', err);
+      setError('Error al cargar los servicios. Por favor, inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleServicePress = (service) => {
-    navigation.navigate('ServiceDetail', { serviceId: service._id });
+    // Navegar a la pantalla de nueva cita con el servicio seleccionado
+    navigation.navigate('NewAppointment', { selectedService: service });
   };
 
   const handleAddService = () => {
@@ -131,55 +146,67 @@ const ServicesScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  if (loading && services.length === 0) {
-    return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
-      </View>
-    );
-  }
-
-  if (error && services.length === 0) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadServices}>
-          <Text style={styles.retryButtonText}>Reintentar</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={services}
-        renderItem={renderServiceItem}
-        keyExtractor={(item) => item._id.toString()}
-        contentContainerStyle={styles.listContainer}
-        refreshing={loading}
-        onRefresh={loadServices}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>No hay servicios disponibles</Text>
-        }
-      />
-      
-      {userIsAdmin && (
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={handleAddService}
-        >
-          <Ionicons name="add" size={24} color="white" />
-        </TouchableOpacity>
-      )}
-    </View>
+    <ScrollView style={styles.scrollView}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Nuestros Servicios</Text>
+        
+        {loading ? (
+          <ActivityIndicator size="large" color="#000" style={styles.loader} />
+        ) : error ? (
+          <View style={styles.centeredContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadServices}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.servicesGrid}>
+            {services.map((service, index) => (
+              <TouchableOpacity 
+                key={service._id || index}
+                style={styles.serviceCard}
+                onPress={() => handleServicePress(service)}
+              >
+                <View style={styles.serviceContent}>
+                  <Text style={styles.serviceName}>{service.name}</Text>
+                  <Text style={styles.servicePrice}>{service.price}€</Text>
+                  <Text style={styles.serviceDuration}>{service.duration} min</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        
+        {userIsAdmin && (
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={handleAddService}
+          >
+            <Ionicons name="add" size={24} color="white" />
+          </TouchableOpacity>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#f8f8f8'
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    padding: 16,
+    backgroundColor: '#f8f8f8',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
   },
   centeredContainer: {
     flex: 1,
@@ -190,17 +217,45 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
   },
-  serviceItem: {
+  servicesGrid: {
+    width: '100%',
+    paddingHorizontal: 10,
     flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  serviceCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
+    width: '48%',
+    minWidth: 150,
+  },
+  serviceContent: {
+    alignItems: 'center',
+  },
+  serviceName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  servicePrice: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 4,
+  },
+  serviceDuration: {
+    fontSize: 14,
+    color: '#666',
   },
   serviceImage: {
     width: 60,

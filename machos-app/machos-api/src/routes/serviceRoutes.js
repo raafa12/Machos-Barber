@@ -1,18 +1,18 @@
 const express = require('express');
 const serviceController = require('../controllers/serviceController');
-const authMiddleware = require('../middlewares/authMiddleware');
+const { authMiddleware, checkRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
 // Rutas públicas
 router.get('/', serviceController.getAllServices);
-router.get('/:id', serviceController.getService);
+router.get('/:id', serviceController.getServiceById);
 
 // Proteger todas las rutas siguientes
-router.use(authMiddleware.protect);
+router.use(authMiddleware);
 
 // Rutas solo para administradores
-router.use(authMiddleware.restrictTo('admin'));
+router.use(checkRole(['admin']));
 
 router
   .route('/')
@@ -23,7 +23,8 @@ router
   .put(serviceController.updateService)
   .delete(serviceController.deleteService);
 
-router.patch('/:id/activate', serviceController.activateService);
-router.patch('/:id/deactivate', serviceController.deactivateService);
+// Estas rutas se implementarán más adelante
+// router.patch('/:id/activate', serviceController.activateService);
+// router.patch('/:id/deactivate', serviceController.deactivateService);
 
 module.exports = router;

@@ -1,8 +1,9 @@
 export const colors = {
-    primary: '#3498db',   // Azul
-    secondary: '#2ecc71', // Verde
-    background: '#f0f0f0', // Fondo claro
-    text: '#333333',      // Texto oscuro
-    button: '#e74c3c',    // Rojo
-  };
+  primary: '#4F46E5',
+  secondary: '#64748B',
+  background: '#F8FAFC',
+  text: '#1E293B',
+  error: '#DC2626',
+};
+
   

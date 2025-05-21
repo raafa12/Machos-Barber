@@ -2,32 +2,24 @@
 const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
-const auth = require('../middleware/auth');
+const { authMiddleware, checkRole } = require('../middlewares/authMiddleware');
 const reservationController = require('../controllers/reservationController');
 
-// Middleware para verificar si es admin
-const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Acceso denegado. Se requieren permisos de administrador.' });
-  }
-  next();
-};
-
 // Obtener todas las reservas (solo admin)
-router.get('/', auth, isAdmin, reservationController.getAllReservations);
+router.get('/', authMiddleware, checkRole(['admin']), reservationController.getAllReservations);
 
 // Obtener reservas del usuario actual
-router.get('/me', auth, reservationController.getMyReservations);
+router.get('/me', authMiddleware, reservationController.getMyReservations);
 
 // Verificar disponibilidad
-router.get('/availability', auth, reservationController.checkAvailability);
+router.get('/availability', authMiddleware, reservationController.checkAvailability);
 
 // Obtener una reserva por ID
-router.get('/:id', auth, reservationController.getReservationById);
+router.get('/:id', authMiddleware, reservationController.getReservationById);
 
 // Crear una nueva reserva
 router.post('/', 
-  auth,
+  authMiddleware,
   [
     check('serviceId', 'El ID del servicio es requerido').not().isEmpty(),
     check('barberId', 'El ID del peluquero es requerido').not().isEmpty(),
@@ -38,7 +30,7 @@ router.post('/',
 
 // Actualizar estado de una reserva
 router.patch('/:id/status',
-  auth,
+  authMiddleware,
   [
     check('status', 'El estado es requerido')
       .not().isEmpty()
@@ -49,6 +41,6 @@ router.patch('/:id/status',
 );
 
 // Eliminar una reserva (solo admin)
-router.delete('/:id', auth, isAdmin, reservationController.deleteReservation);
+router.delete('/:id', authMiddleware, checkRole(['admin']), reservationController.deleteReservation);
 
 module.exports = router;

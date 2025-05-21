@@ -5,14 +5,15 @@ import { Calendar } from 'react-native-calendars';
 import { useNavigation } from '@react-navigation/native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { createAppointment, getAvailableTimeSlots } from '../../services/api/appointmentService';
-import { getServices } from '../../services/api/serviceService';
+import serviceApi from '../../services/serviceApi';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { colors } from '../../constants/colors';
 
-const NewAppointmentScreen = () => {
+const NewAppointmentScreen = ({ route }) => {
   const navigation = useNavigation();
-  
+  const { selectedService: preSelectedService } = route.params || {};
+
   // Estados
   const [selectedDate, setSelectedDate] = useState('');
   const [services, setServices] = useState([]);
@@ -28,16 +29,31 @@ const NewAppointmentScreen = () => {
     const loadServices = async () => {
       try {
         setLoading(true);
-        const servicesData = await getServices();
-        // Formatear los servicios para el dropdown
-        const formattedServices = servicesData.map(service => ({
-          label: `${service.name} - $${service.price} (${service.duration} min)`,
-          value: service._id,
-          duration: service.duration,
-          name: service.name,
-          price: service.price
-        }));
+        const response = await serviceApi.getAllServices();
+        const servicesData = Array.isArray(response) ? response : (response.data || []);
+        
+        // Filtrar solo servicios activos y formatear para el dropdown
+        const formattedServices = servicesData
+          .filter(service => service.active !== false)
+          .map(service => ({
+            label: `${service.name} - ${service.price}€ (${service.duration} min)`,
+            value: service._id,
+            ...service
+          }));
+        
         setServices(formattedServices);
+        
+        // Si hay un servicio preseleccionado, establecerlo
+        if (preSelectedService) {
+          const serviceToSelect = formattedServices.find(
+            s => s._id === preSelectedService._id || s.name === preSelectedService.name
+          );
+          if (serviceToSelect) {
+            setSelectedService(serviceToSelect.value);
+            // Cerrar el dropdown después de seleccionar
+            setServiceDropdownOpen(false);
+          }
+        }
       } catch (error) {
         Alert.alert('Error', 'No se pudieron cargar los servicios disponibles');
         console.error('Error loading services:', error);
@@ -47,12 +63,13 @@ const NewAppointmentScreen = () => {
     };
 
     loadServices();
-  }, []);
+  }, [preSelectedService]);
 
   // Cargar horarios disponibles cuando se selecciona una fecha
   useEffect(() => {
     const loadTimeSlots = async () => {
       if (!selectedDate || !selectedService) return;
+
       
       try {
         setLoading(true);
@@ -147,25 +164,38 @@ const NewAppointmentScreen = () => {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Nueva Reserva</Text>
       
-      {/* Sección de selección de servicio */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Selecciona un servicio</Text>
-        <DropDownPicker
-          open={serviceDropdownOpen}
-          setOpen={setServiceDropdownOpen}
-          value={selectedService?.value}
-          setValue={(val) => {
-            const service = services.find(s => s.value === val);
-            setSelectedService(service);
-          }}
-          items={services}
-          placeholder="Selecciona un servicio"
-          style={styles.dropdown}
-          dropDownContainerStyle={styles.dropdownContainer}
-          zIndex={3000}
-          zIndexInverse={1000}
-        />
-      </View>
+      {/* Mostrar el servicio seleccionado si viene preseleccionado */}
+      {preSelectedService ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Servicio seleccionado</Text>
+          <View style={styles.selectedServiceContainer}>
+            <Text style={styles.selectedServiceName}>{selectedService?.name}</Text>
+            <Text style={styles.selectedServiceDetails}>
+              {selectedService?.duration} min • {selectedService?.price}€
+            </Text>
+          </View>
+        </View>
+      ) : (
+        /* Mostrar selector de servicio solo si no hay servicio preseleccionado */
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Selecciona un servicio</Text>
+          <DropDownPicker
+            open={serviceDropdownOpen}
+            setOpen={setServiceDropdownOpen}
+            value={selectedService?.value}
+            setValue={(val) => {
+              const service = services.find(s => s.value === val);
+              setSelectedService(service);
+            }}
+            items={services}
+            placeholder="Selecciona un servicio"
+            style={styles.dropdown}
+            dropDownContainerStyle={styles.dropdownContainer}
+            zIndex={3000}
+            zIndexInverse={1000}
+          />
+        </View>
+      )}
       
       {/* Sección de calendario */}
       <View style={styles.section}>
@@ -328,6 +358,24 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     color: '#333',
+  },
+  selectedServiceContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginTop: 5,
+  },
+  selectedServiceName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 5,
+  },
+  selectedServiceDetails: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 

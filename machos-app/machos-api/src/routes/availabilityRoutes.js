@@ -1,6 +1,6 @@
 const express = require('express');
 const availabilityController = require('../controllers/availabilityController');
-const authMiddleware = require('../middlewares/authMiddleware');
+const { authMiddleware, checkRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
@@ -8,13 +8,13 @@ const router = express.Router();
 router.get('/slots/:stylistId', availabilityController.getAvailableSlots);
 
 // Proteger todas las rutas siguientes
-router.use(authMiddleware.protect);
+router.use(authMiddleware);
 
 // Rutas para clientes (consultar disponibilidad)
 router.get('/stylist/:stylistId', availabilityController.getStylistAvailability);
 
 // Rutas solo para administradores (estilistas)
-router.use(authMiddleware.restrictTo('admin'));
+router.use(checkRole(['admin']));
 
 router.get('/', availabilityController.getStylistAvailability); // Obtener propia disponibilidad
 router.post('/', availabilityController.createUpdateAvailability); // Crear/actualizar disponibilidad

@@ -3,30 +3,36 @@ import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Navigation from './src/navigation/Navigation';
 import 'react-native-gesture-handler';
+import { AuthProvider } from './src/context/AuthContext';
 
 
 export default function App() {
   const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem('userToken');
-      setLoggedIn(!!token);
-      setLoading(false);
+    // Solo verificamos si se ha cargado la aplicación
+    const init = async () => {
+      // Simulamos un tiempo de carga para mostrar la pantalla de splash
+      setTimeout(() => {
+        setLoading(false);
+      }, 1000);
     };
-    checkToken();
+    init();
   }, []);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#f5f5f5' }}>
+        <ActivityIndicator size="large" color="#000" />
       </View>
     );
   }
 
-  return <Navigation loggedIn={loggedIn} />;
+  return (
+    <AuthProvider>
+      <Navigation />
+    </AuthProvider>
+  );
 }
 
 
